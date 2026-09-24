@@ -15,3 +15,51 @@ An end-to-end Retrieval-Augmented Generation (RAG) database solution built for *
 * `sql/01_schema_and_vector_index.sql` - Table schema and DiskANN vector index
 * `sql/02_security_credentials.sql` - Database-scoped credentials for API authentication
 * `sql/03_rag_stored_procedure.sql` - Complete RAG stored procedure
+
+# Enterprise Native Vector Search & RAG Pipeline in Azure SQL
+
+An end-to-end Retrieval-Augmented Generation (RAG) database architecture built entirely inside **Azure SQL Database**. This project demonstrates how to perform high-speed similarity searches and invoke Azure OpenAI REST endpoints directly within T-SQL—eliminating the need for external vector databases or middle-tier application servers.
+
+---
+
+## 🏗️ Architecture & Data Flow
+
+```text
+[ User Query & Search Vector ]
+              │
+              ▼
+  [ dbo.sp_AnswerCustomerQuery ]
+              │
+              ├── 1. VECTOR_SEARCH (DiskANN Cosine Index) ──► Retrieves Top-3 Relevant Chunks
+              │
+              ├── 2. FOR JSON PATH ──────────────────────────► Formats Azure OpenAI Request Payload
+              │
+              ├── 3. sp_invoke_external_rest_endpoint ───────► Executes HTTPS POST to Azure OpenAI
+              │
+              └── 4. JSON_VALUE ─────────────────────────────► Extracts Scalar Text Completion Answer
+📥 Input & Output Specification
+Component
+Description / Type
+Example Value / Payload
+Input: Query Vector
+VECTOR(1536)
+1536-dimensional array from text-embedding-ada-002 or text-embedding-3-small
+Input: User Question
+NVARCHAR(MAX)
+"What is the corporate password reset policy?"
+Security Credential
+DATABASE SCOPED CREDENTIAL
+AzureOpenAIHeaders storing encrypted api-key header
+Internal Processing
+T-SQL In-Engine RAG
+VECTOR_SEARCH ➔ FOR JSON PATH ➔ sp_invoke_external_rest_endpoint
+Output: AI Response
+NVARCHAR(MAX)
+"Passwords must be at least 16 characters long and updated every 90 days."
+📂 Repository File Index
+azure-sql-native-rag-pipeline/
+├── README.md                           <-- Project Overview & Guide
+└── sql/
+    ├── 01_schema_and_vector_index.sql  <-- Table creation, VECTOR(1536), & DiskANN index
+    ├── 02_security_credentials.sql     <-- Database Scoped Credential configuration
+    └── 03_rag_stored_procedure.sql     <-- Complete RAG workflow procedure
